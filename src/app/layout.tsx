@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Mona_Sans } from "next/font/google";
+import { NavBar } from "@/components/layouts/NavBar";
 import "./globals.css";
+import PaRappaDaWrapper from "@/components/layouts/PaRappaDaWrapper";
+import Footer from "@/components/layouts/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const monaSans = Mona_Sans({
+  variable: "--font-mona-sans",
   subsets: ["latin"],
 });
 
@@ -25,9 +23,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${monaSans.variable} antialiased min-h-screen overflow-hidden`}
       >
-        {children}
+        <PaRappaDaWrapper>
+          <NavBar />
+          {children}
+          <Footer />
+        </PaRappaDaWrapper>
       </body>
     </html>
   );
