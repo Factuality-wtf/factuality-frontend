@@ -4,11 +4,8 @@ import { useFact } from "./hooks/useFact";
 import FactDisplay from "../components/FactDisplay";
 import FactButton from "../components/FactButton";
 
-const defaultFact =
-  "Discover random facts about anything and everything—science, history, weird trivia, and more—all in one place!";
-
 export default function Home() {
-  const { fact, fetchFact, loading } = useFact(defaultFact);
+  const { fact, fetchFact, loading } = useFact();
 
   return (
     <main className="flex flex-col items-start justify-between text-text w-3/4 p-12">
