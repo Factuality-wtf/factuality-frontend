@@ -20,8 +20,10 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: 📦 Install pnpm
-        run: npm install -g pnpm
+      - name: 📦 Enable and install pnpm via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
@@ -47,6 +49,6 @@ jobs:
           script: |
             bash /scripts/build.sh
             cd /home/deployer/frontend
-            pnpm install --frozen-lockfile
+            NODE_ENV=production pnpm install --frozen-lockfile
             pm2 restart frontend || pm2 start ecosystem.config.js
             pm2 save
