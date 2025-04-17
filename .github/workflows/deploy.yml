@@ -20,10 +20,11 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: 📦 Enable and install pnpm via corepack
+      - name: 📦 Set up corepack & pnpm manually
         run: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@8.15.5 --activate
+          echo "PNPM version:" && pnpm -v
 
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
