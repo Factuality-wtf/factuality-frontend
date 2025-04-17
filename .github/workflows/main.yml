@@ -1,0 +1,52 @@
+name: 🚀 Frontend Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🧶 Set up Node.js 22 and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: 📦 Install pnpm
+        run: npm install -g pnpm
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🛠 Build project
+        run: pnpm build
+
+      - name: 📡 Deploy via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: deployer
+          key: ${{ secrets.EC2_KEY }}
+          source: ".next,public,package.json,pnpm-lock.yaml,ecosystem.config.js"
+          target: "/home/deployer/frontend"
+
+      - name: 🔁 SSH and provision/restart frontend
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: deployer
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            bash /scripts/build.sh
+            cd /home/deployer/frontend
+            pnpm install --frozen-lockfile
+            pm2 restart frontend || pm2 start ecosystem.config.js
+            pm2 save
