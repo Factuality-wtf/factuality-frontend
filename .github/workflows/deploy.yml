@@ -49,7 +49,7 @@ jobs:
           username: deployer
           key: ${{ secrets.EC2_KEY }}
           script: |
-            bash /scripts/build.sh
+            bash ./scripts/build.sh
             cd /home/deployer/frontend
             NODE_ENV=production pnpm install --frozen-lockfile
             pm2 restart frontend || pm2 start ecosystem.config.js
