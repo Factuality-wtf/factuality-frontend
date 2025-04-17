@@ -3,7 +3,7 @@ name: 🚀 Frontend Deploy
 on:
   push:
     branches:
-      - main
+      - deploy
 
 jobs:
   deploy:
