@@ -14,17 +14,18 @@ jobs:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧶 Set up Node.js 22 and pnpm
+      - name: 🧶 Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "pnpm"
 
-      - name: 📦 Set up corepack & pnpm manually
-        run: |
-          corepack enable
-          corepack prepare pnpm@8.15.5 --activate
-          echo "PNPM version:" && pnpm -v
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 8
+          run_install: false
 
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
