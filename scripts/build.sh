@@ -1,31 +1,44 @@
 #!/bin/bash
 
-export PATH="$HOME/.nvm/versions/node/v22.14.0/bin:$PATH"
-
-# Install NVM and Node 22
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
+if [[ ":$PATH:" != *":$NVM_DIR/versions/node/v22.14.0/bin:"* ]]; then
+  export PATH="$NVM_DIR/versions/node/v22.14.0/bin:$PATH"
+fi
+
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
+# Install Node 22 if not already
 nvm install 22
 nvm use 22
 
+# Install pnpm and pm2 if missing
 if ! command -v pnpm &> /dev/null || ! command -v pm2 &> /dev/null; then
   [ ! "$(command -v pnpm)" ] && npm install -g pnpm
   [ ! "$(command -v pm2)" ] && npm install -g pm2
 fi
 
-npm install -g pm2
+# Confirm installed
+for tool in node pnpm pm2; do
+  if command -v $tool &>/dev/null; then
+    version=$($tool -v)
+    log "$tool: $version"
+  else
+    error "$tool is not installed"
+  fi
+done
 
-# Confirm versions
-node -v
-pnpm -v
-pm2 -v
-
-# Set up deploy dir
+# Setup deploy directory
 mkdir -p /home/deployer/factuality-frontend
 chown -R deployer:deployer /home/deployer/factuality-frontend
 
-# Set PM2 to run on boot
-pm2 startup systemd -u deployer --hp /home/deployer
+# Ensure PM2 boots on restart
+sudo env PATH="$PATH" pm2 startup systemd -u deployer --hp /home/deployer
+
+# Install project deps
+cd /home/deployer/factuality-frontend
+NODE_ENV=production pnpm install --frozen-lockfile
+
+# Start or restart frontend with PM2
+pm2 restart frontend || pm2 start ecosystem.config.js
+pm2 save
