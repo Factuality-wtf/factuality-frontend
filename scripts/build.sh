@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH="$HOME/.nvm/versions/node/v22.14.0/bin:$PATH"
+
 # Install NVM and Node 22
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
@@ -9,8 +11,12 @@ export NVM_DIR="$HOME/.nvm"
 nvm install 22
 nvm use 22
 
-# Install pnpm and pm2 globally
-npm install -g pnpm
+if ! command -v pnpm &> /dev/null || ! command -v pm2 &> /dev/null; then
+  [ ! "$(command -v pnpm)" ] && npm install -g pnpm
+  [ ! "$(command -v pm2)" ] && npm install -g pm2
+fi
+
+
 npm install -g pm2
 
 # Confirm versions
