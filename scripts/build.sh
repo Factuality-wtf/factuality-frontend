@@ -2,23 +2,25 @@
 
 # Install NVM and Node 22
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
-\. "$HOME/.nvm/nvm.sh"
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
 nvm install 22
+nvm use 22
 
-# Confirm Node setup
+# Install pnpm and pm2 globally
+npm install -g pnpm
+npm install -g pm2
+
+# Confirm versions
 node -v
-nvm current
-
-# Enable and activate pnpm via corepack
-corepack enable
-corepack prepare pnpm@latest --activate
-
-# Confirm pnpm works
 pnpm -v
+pm2 -v
 
-# Create frontend dir and set permissions
-mkdir -p /home/deployer/frontend
-chown -R deployer:deployer /home/deployer/frontend
+# Set up deploy dir
+mkdir -p /home/deployer/factuality-frontend
+chown -R deployer:deployer /home/deployer/factuality-frontend
 
-# PM2 system startup
+# Set PM2 to run on boot
 pm2 startup systemd -u deployer --hp /home/deployer

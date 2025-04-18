@@ -38,7 +38,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: deployer
           key: ${{ secrets.EC2_KEY }}
-          source: ".next,public,package.json,pnpm-lock.yaml,ecosystem.config.js"
+          source: ".next,public,package.json,pnpm-lock.yaml,ecosystem.config.js,scripts"
           target: "/home/deployer/"
 
       - name: 🔁 SSH and provision/restart frontend
