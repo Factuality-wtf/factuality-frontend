@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
-        with:
-          path: develop
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
@@ -25,8 +23,7 @@ jobs:
       - name: 🧶 Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "latest"
-          check-latest: true
+          node-version: "22"
           cache: "pnpm"
 
       - name: 📦 Install dependencies
@@ -42,7 +39,7 @@ jobs:
           username: deployer
           key: ${{ secrets.EC2_KEY }}
           source: ".next,public,package.json,pnpm-lock.yaml,ecosystem.config.js"
-          target: "/home/deployer/factuality-frontend"
+          target: "/home/deployer/"
 
       - name: 🔁 SSH and provision/restart frontend
         uses: appleboy/ssh-action@v1.0.0
