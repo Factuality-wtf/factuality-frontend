@@ -48,6 +48,7 @@ jobs:
           username: deployer
           key: ${{ secrets.EC2_KEY }}
           script: |
+            export PATH="$HOME/.nvm/versions/node/v22.14.0/bin:$PATH"
             bash /home/deployer/factuality-frontend/scripts/build.sh
             cd /home/deployer/factuality-frontend
             NODE_ENV=production pnpm install --frozen-lockfile

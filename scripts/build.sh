@@ -16,7 +16,6 @@ if ! command -v pnpm &> /dev/null || ! command -v pm2 &> /dev/null; then
   [ ! "$(command -v pm2)" ] && npm install -g pm2
 fi
 
-
 npm install -g pm2
 
 # Confirm versions
