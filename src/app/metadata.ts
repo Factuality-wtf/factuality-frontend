@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     siteName: "factuality.wtf",
     images: [
       {
-        url: "/og-image.png",
+        url: "./icons/default-image.png",
         width: 1200,
         height: 630,
         alt: "factuality.wtf Open Graph Image",
@@ -34,15 +34,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "factuality.wtf — The Facts No One Asked For",
     description: "Weird. Real. Shareable. Get your daily brain itch scratched.",
-    images: ["/twitter-image.png"],
+    images: ["./icons/default-image.png"],
     creator: "@factualitywtf",
   },
   icons: {
-    icon: "/favicon-32x32.png",
-    apple: "/apple-touch-icon.png",
-    shortcut: "/favicon.ico",
+    icon: "./icons/favicon-32x32.png",
+    apple: "./icons/apple-touch-icon.png",
+    shortcut: "./favicon.ico",
   },
-  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {

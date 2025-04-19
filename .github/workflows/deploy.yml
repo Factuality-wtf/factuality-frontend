@@ -8,17 +8,11 @@ on:
 jobs:
   deploy:
     name: Deploy to EC2
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted] # or [self-hosted, frontend] if you used labels
 
     steps:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          version: 10
-          run_install: false
 
       - name: 🧶 Set up Node.js
         uses: actions/setup-node@v4
@@ -26,31 +20,16 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
+      - name: 🔧 Set up PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: 🛠 Build project
         run: pnpm build
 
-      - name: 📡 Deploy via SCP
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: deployer
-          key: ${{ secrets.EC2_KEY }}
-          source: ".next,public,package.json,pnpm-lock.yaml,ecosystem.config.js,scripts"
-          target: "/home/deployer/"
-
-      - name: 🔁 SSH and provision/restart frontend
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: deployer
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            export PATH="$HOME/.nvm/versions/node/v22.14.0/bin:$PATH"
-            bash /home/deployer/factuality-frontend/scripts/build.sh
-            cd /home/deployer/factuality-frontend
-            NODE_ENV=production pnpm install --frozen-lockfile
-            pm2 restart frontend || pm2 start ecosystem.config.js
-            pm2 save
+      - name: 🔁 Restart frontend service
+        run: sudo systemctl restart factuality-fe.service
