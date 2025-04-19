@@ -1,3 +1,10 @@
+"use client";
+import styled from "styled-components";
+
+const FooterLinks = styled.div`
+  display: none;
+`;
+
 const Footer = () => {
   return (
     <footer>
@@ -12,14 +19,14 @@ const Footer = () => {
             </div>
             <div className="text-lg break-normal"></div>
           </div>
-          <div className="flex flex-col justify-end items-end text-right text-secondary text-4xl uppercase gap-y-2">
+          <FooterLinks className="flex flex-col justify-end items-end text-right text-secondary text-4xl uppercase gap-y-2">
             <div className="hover:text-text">
               <a href="https://t0nylombardi.com">Github</a>
             </div>
             <div className="hover:text-text">
               <a href="">Instagram</a>
             </div>
-          </div>
+          </FooterLinks>
         </div>
       </div>
     </footer>
