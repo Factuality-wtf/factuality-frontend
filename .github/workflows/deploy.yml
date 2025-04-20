@@ -32,4 +32,6 @@ jobs:
         run: pnpm build
 
       - name: 🔁 Restart frontend service
-        run: sudo systemctl restart factuality-fe.service
+        run: |
+          pm2 restart frontend || pm2 start ecosystem.config.js
+          pm2 save
