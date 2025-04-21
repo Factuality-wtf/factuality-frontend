@@ -36,17 +36,17 @@ jobs:
 
       - name: 🚚 Sync built files to live app dir
         run: |
-          rsync -av --delete ./ /home/deployer/frontend
+          rsync -av --delete ./ /home/deployer/factuality-frontend
 
       - name: 🔁 Restart PM2 service
         run: |
-          cd /home/deployer/frontend
-          pm2 restart frontend || pm2 start ecosystem.config.js
+          cd /home/deployer/factuality-frontend
+          pm2 restart factuality-frontend || pm2 start ecosystem.config.js
           pm2 save
 
       - name: ✅ Confirm deployed commit
         run: |
-          cd /home/deployer/frontend
+          cd /home/deployer/factuality-frontend
           echo "Deployed commit SHA:"
           git rev-parse HEAD
 
