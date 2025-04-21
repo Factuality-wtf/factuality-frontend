@@ -49,6 +49,3 @@ jobs:
           cd /home/deployer/factuality-frontend
           echo "Deployed commit SHA:"
           git rev-parse HEAD
-
-      - name: 🧹 Clean runner workspace (optional)
-        run: rm -rf /home/deployer/actions-runner/_work/*
