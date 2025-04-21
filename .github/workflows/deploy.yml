@@ -8,11 +8,14 @@ on:
 jobs:
   deploy:
     name: Deploy to EC2
-    runs-on: [self-hosted] # or [self-hosted, frontend] if you used labels
+    runs-on: [self-hosted]
 
     steps:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
+
+      - name: 🔍 Show latest commit
+        run: git rev-parse HEAD
 
       - name: 🧶 Set up Node.js
         uses: actions/setup-node@v4
@@ -31,7 +34,21 @@ jobs:
       - name: 🛠 Build project
         run: pnpm build
 
-      - name: 🔁 Restart frontend service
+      - name: 🚚 Sync built files to live app dir
         run: |
+          rsync -av --delete ./ /home/deployer/frontend
+
+      - name: 🔁 Restart PM2 service
+        run: |
+          cd /home/deployer/frontend
           pm2 restart frontend || pm2 start ecosystem.config.js
           pm2 save
+
+      - name: ✅ Confirm deployed commit
+        run: |
+          cd /home/deployer/frontend
+          echo "Deployed commit SHA:"
+          git rev-parse HEAD
+
+      - name: 🧹 Clean runner workspace (optional)
+        run: rm -rf /home/deployer/actions-runner/_work/*
