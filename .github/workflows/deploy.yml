@@ -9,10 +9,19 @@ jobs:
   deploy:
     name: Deploy to EC2
     runs-on: [self-hosted]
+    # Set timeout to prevent hung jobs consuming resources
+    timeout-minutes: 10
 
     steps:
+      - name: 🧹 Clean up runner workspace
+        run: |
+          rm -rf $GITHUB_WORKSPACE/* || echo "Failed to clean workspace"
+          du -sh $GITHUB_WORKSPACE || echo "Workspace size check failed"
+
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Shallow clone to reduce disk usage
 
       - name: 🔍 Show latest commit
         run: git rev-parse HEAD
@@ -23,32 +32,53 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
+      - name: 📦 Setup PNPM
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+        # Installs PNPM without creating large setup directories
+
       - name: Setup PNPM Store Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4 # Upgraded to v4 for better performance
         with:
           path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --prod --frozen-lockfile
+        # Install only production dependencies to reduce node_modules size
 
       - name: 🛠 Build project
         run: pnpm build
 
       - name: 🚚 Sync built files to live app dir
         run: |
-          rsync -av --delete ./ /home/deployer/factuality-frontend
+          rsync -av --delete --exclude 'node_modules' --exclude '.git' ./ /home/deployer/factuality-frontend
+        # Excludes node_modules and .git to reduce disk usage
 
       - name: 🔁 Restart PM2 service
         run: |
           cd /home/deployer/factuality-frontend
           pm2 restart factuality-frontend || pm2 start ecosystem.config.js
           pm2 save
+        # Maintains original PM2 restart logic
 
       - name: ✅ Confirm deployed commit
         run: |
           cd /home/deployer/factuality-frontend
           echo "Deployed commit SHA:"
           git rev-parse HEAD
+
+      - name: 📊 Check disk usage
+        run: |
+          df -h
+          du -sh /home/deployer/actions-runner || echo "Runner size check failed"
+          du -sh /home/deployer/factuality-frontend || echo "App size check failed"
+
+      - name: 🧹 Clean up runner workspace
+        if: always() # Run even if previous steps fail
+        run: |
+          rm -rf $GITHUB_WORKSPACE/* || echo "Failed to clean workspace"
+          du -sh $GITHUB_WORKSPACE || echo "Workspace size check failed"
