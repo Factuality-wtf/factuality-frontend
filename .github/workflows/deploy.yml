@@ -47,8 +47,7 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: 📦 Install dependencies
-        run: pnpm install --prod --frozen-lockfile
-        # Install only production dependencies to reduce node_modules size
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: 🛠 Build project
         run: pnpm build
