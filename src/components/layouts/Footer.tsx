@@ -8,10 +8,10 @@ const FooterLinks = styled.div`
 const Footer = () => {
   return (
     <footer>
-      <div className="min-w-screen text-center p-12">
-        <div className="flex flex-row items-end justify-between gap-y-4">
+      <div className="min-w-screen text-center p-12 mt-16">
+        <div className="flex flex-row items-end justify-center md:justify-between gap-y-4">
           <div className="flex flex-col justify-start text-left text-secondary text-lg uppercase">
-            <div className="text-lg">
+            <div className="text-sm md:text-lg">
               <span>©</span> {new Date().getFullYear()} Factuality.WTF{" | "}
               <a href="https://t0nylombardi.dev" className="hover:text-text">
                 t0nylombardi
