@@ -26,9 +26,15 @@
 }
 
 body {
-  background: url("/bg3.png") no-repeat fixed center center / cover;
+  background: url("/bg3.png") no-repeat center center fixed;
+  background-size: cover;
   font-family: var(--font-sans);
   scroll-padding-top: 8rem;
   scroll-behavior: smooth;
-  height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
