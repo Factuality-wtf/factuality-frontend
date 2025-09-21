@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    "name": "factuality.wtf",
+    "name": "factually.wtf",
     "short_name": "factuality",
     "start_url": "/",
     "display": "standalone",

@@ -2,18 +2,15 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const start = Date.now();
-
   try {
-    const res = await fetch('https://api.factuality.wtf/api/fact', {
+    const res = await fetch('https://api.factually.wtf/api/fact', {
+      signal: AbortSignal.timeout(1000), // 1 second timeout
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
     });
 
-    const elapsed = Date.now() - start;
-    console.log(`[FACT API] Response time: ${elapsed}ms`);
 
     if (!res.ok) {
       throw new Error('Network response was not ok');

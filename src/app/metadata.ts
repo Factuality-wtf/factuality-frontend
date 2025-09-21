@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "factuality.wtf — The Facts No One Asked For",
+  title: "factually.wtf — The Facts No One Asked For",
   description:
-    "Get smacked in the brain with random facts you didn't ask for but can't unlearn. factuality.wtf — where the weird is real.",
+    "Get smacked in the brain with random facts you didn't ask for but can't unlearn. factually.wtf — where the weird is real.",
   keywords: [
     "random facts",
     "useless knowledge",
@@ -11,20 +11,20 @@ export const metadata: Metadata = {
     "interesting facts",
     "factuality",
   ],
-  authors: [{ name: "factuality.wtf", url: "https://factuality.wtf" }],
-  creator: "factuality.wtf",
-  metadataBase: new URL("https://factuality.wtf"),
+  authors: [{ name: "factually.wtf", url: "https://factually.wtf" }],
+  creator: "factually.wtf",
+  metadataBase: new URL("https://factually.wtf"),
   openGraph: {
-    title: "factuality.wtf — The Facts No One Asked For",
+    title: "factually.wtf — The Facts No One Asked For",
     description: "Bite-sized facts you didn't need but now can't stop reading.",
-    url: "https://factuality.wtf",
-    siteName: "factuality.wtf",
+    url: "https://factually.wtf",
+    siteName: "factually.wtf",
     images: [
       {
         url: "./icons/default-image.png",
         width: 1200,
         height: 630,
-        alt: "factuality.wtf Open Graph Image",
+        alt: "factually.wtf Open Graph Image",
       },
     ],
     locale: "en_US",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "factuality.wtf — The Facts No One Asked For",
+    title: "factually.wtf — The Facts No One Asked For",
     description: "Weird. Real. Shareable. Get your daily brain itch scratched.",
     images: ["./icons/default-image.png"],
     creator: "@factualitywtf",
