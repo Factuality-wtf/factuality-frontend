@@ -26,6 +26,10 @@
 }
 
 body {
+  background-image: url("/_bg.webp");
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: auto 100%; /* keep original width, full height */
   background-color: var(--color-background);
   font-family: var(--font-sans);
   scroll-padding-top: 8rem;
