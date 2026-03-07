@@ -1,0 +1,394 @@
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/api/fact/route.ts ===
+import { NextResponse } from "next/server"
+import { FactClient, UpstreamError } from "@/lib/factClient"
+
+const client = new FactClient()
+
+export async function GET() {
+  try {
+    const fact = await client.getFact()
+    return NextResponse.json({ data: fact })
+  } catch (error) {
+    if (error instanceof UpstreamError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      )
+    }
+
+    return NextResponse.json(
+      { error: "Service unavailable" },
+      { status: 503 }
+    )
+  }
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/fonts.ts ===
+import { Mona_Sans } from "next/font/google";
+
+export const monaSans = Mona_Sans({
+  variable: "--font-mona-sans",
+  subsets: ["latin"],
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/hooks/useFact.tsx ===
+import { useState } from "react";
+
+const defaultFact =
+  "Discover random facts about anything and everything all in one place!";
+
+export const useFact = () => {
+  const [fact, setFact] = useState(defaultFact);
+  const [loading, setLoading] = useState(false);
+
+  const fetchFact = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/fact");
+
+      if (!res.ok) throw new Error("Request failed");
+
+      const { fact } = await res.json();
+      setFact(fact);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      setFact("Error fetching fact.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { fact, fetchFact, loading };
+};
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/layout.tsx ===
+import "./globals.css";
+import { metadata, viewport } from "./metadata";
+import { monaSans } from "./fonts";
+import { NavBar } from "@/components/layouts/NavBar";
+import PaRappaDaWrapper from "@/components/layouts/PaRappaDaWrapper";
+import Footer from "@/components/layouts/Footer";
+
+export { metadata, viewport };
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body
+        className={`${monaSans.variable} antialiased min-h-screen overflow-hidden`}
+      >
+        <PaRappaDaWrapper>
+          <NavBar />
+          {children}
+          <Footer />
+        </PaRappaDaWrapper>
+      </body>
+    </html>
+  );
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/manifest.ts ===
+import type { MetadataRoute } from 'next'
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    "name": "factually.wtf",
+    "short_name": "factuality",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#232136",
+    "theme_color": "#eb6f92",
+    "icons": [
+      {
+        "src": "/icons/android-chrome-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/android-chrome-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/metadata.ts ===
+import type { Metadata, Viewport } from "next";
+
+export const metadata: Metadata = {
+  title: "factually.wtf — The Facts No One Asked For",
+  description:
+    "Get smacked in the brain with random facts you didn't ask for but can't unlearn. factually.wtf — where the weird is real.",
+  keywords: [
+    "random facts",
+    "useless knowledge",
+    "trivia",
+    "interesting facts",
+    "factuality",
+  ],
+  authors: [{ name: "factually.wtf", url: "https://factually.wtf" }],
+  creator: "factually.wtf",
+  metadataBase: new URL("https://factually.wtf"),
+  openGraph: {
+    title: "factually.wtf — The Facts No One Asked For",
+    description: "Bite-sized facts you didn't need but now can't stop reading.",
+    url: "https://factually.wtf",
+    siteName: "factually.wtf",
+    images: [
+      {
+        url: "./icons/default-image.png",
+        width: 1200,
+        height: 630,
+        alt: "factually.wtf Open Graph Image",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "factually.wtf — The Facts No One Asked For",
+    description: "Weird. Real. Shareable. Get your daily brain itch scratched.",
+    images: ["./icons/default-image.png"],
+    creator: "@factualitywtf",
+  },
+  icons: {
+    icon: "./icons/favicon-32x32.png",
+    apple: "./icons/apple-touch-icon.png",
+    shortcut: "./favicon.ico",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#eb6f92",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/app/page.tsx ===
+"use client";
+
+import { useFact } from "./hooks/useFact";
+import FactDisplay from "../components/FactDisplay";
+import FactButton from "../components/FactButton";
+
+export default function Home() {
+  const { fact, fetchFact, loading } = useFact();
+
+  return (
+    <main className="flex flex-col items-center md:items-start justify-between text-text w-3/4 m-4 ">
+      <div className="flex flex-col text-center md:text-left items-start justify-between gap-y-4">
+        <FactDisplay fact={fact} />
+        <div className="flex flex-col gap-y-4 my-4">
+          <FactButton onClick={fetchFact} loading={loading} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/components/FactButton.tsx ===
+type FactButtonProps = {
+  onClick: () => void;
+  loading: boolean;
+};
+
+export default function FactButton({ onClick, loading }: FactButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="w-[15rem] rounded-md bg-primary hover:bg-darken-90 py-2 px-4 border border-transparent text-center text-lg text-background hover:text-text font-semibold uppercase transition-all shadow-md hover:shadow-lg"
+    >
+      {loading ? "loading..." : "get fact"}
+    </button>
+  );
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/components/FactDisplay.tsx ===
+type FactDisplayProps = {
+  fact: string;
+};
+
+export default function FactDisplay({ fact }: FactDisplayProps) {
+  return <p className="text-2xl md:text-4xl py-6">{fact}</p>;
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/components/layouts/Footer.tsx ===
+"use client";
+import styled from "styled-components";
+
+const FooterLinks = styled.div`
+  display: none;
+`;
+
+const Footer = () => {
+  return (
+    <footer>
+      <div className="min-w-screen text-center p-8 mt-2">
+        <div className="flex flex-row items-end justify-center md:justify-between gap-y-4">
+          <div className="flex flex-col justify-start text-left text-secondary text-lg uppercase">
+            <div className="text-sm md:text-lg">
+              <span>©</span> {new Date().getFullYear()} factually.wtf{" | "}
+              <a href="https://t0nylombardi.dev" className="hover:text-text">
+                t0nylombardi
+              </a>
+            </div>
+            <div className="text-lg break-normal"></div>
+          </div>
+          <FooterLinks className="flex flex-col justify-end items-end text-right text-secondary text-4xl uppercase gap-y-2">
+            <div className="hover:text-text">
+              <a href="https://t0nylombardi.com">Github</a>
+            </div>
+            <div className="hover:text-text">
+              <a href="">Instagram</a>
+            </div>
+          </FooterLinks>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/components/layouts/NavBar.tsx ===
+export const NavBar = () => {
+  return (
+    <nav className="flex items-center justify-start h-[12rem]">
+      <div className="flex flex-col justify-end items-end text-primary mr-6 p-6">
+        <span className="text-4xl font-normal md:text-6xl">FACTUALLY</span>
+        <span className="text-4xl font-normal md:text-6xl">.WTF</span>
+      </div>
+
+      <div className="hidden min-h-full w-1/2 flex items-start gap-x-4 mx-16">
+        <div className="text-sm">
+          <a
+            href="#responsive-header"
+            className="block mt-4 text-2xl text-secondary hover:brightness-120 mr-4"
+          >
+            Docs
+          </a>
+        </div>
+        <div className="text-sm">
+          <a
+            href="#responsive-header"
+            className="block mt-4 text-2xl text-secondary hover:brightness-120 mr-4"
+          >
+            About
+          </a>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/components/layouts/PaRappaDaWrapper.tsx ===
+const PaRappaDaWrapper = ({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) => {
+  return (
+    <div className="flex flex-col items-center md:items-start justify-between h-screen overflow-hidden py-4 px-8">
+      {children}
+    </div>
+  );
+};
+
+export default PaRappaDaWrapper;
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/config.ts ===
+import { env } from "./env"
+
+export const config = {
+  api: {
+    baseUrl: env.NEXT_PUBLIC_API_URL,
+    timeoutMs: 1000,
+  },
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/env.ts ===
+import { z } from "zod"
+
+const schema = z.object({
+  NEXT_PUBLIC_API_URL: z.string().url(),
+})
+
+export const env = schema.parse(process.env)
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/factClient.ts ===
+import { config } from "./config"
+
+export type Fact = {
+  id: string
+  fact: string
+}
+
+export class UpstreamError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string
+  ) {
+    super(message)
+  }
+}
+
+export class FactClient {
+  async getFact(): Promise<Fact> {
+    const res = await fetch(`${config.api.baseUrl}/fact`, {
+      signal: AbortSignal.timeout(config.api.timeoutMs),
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    })
+
+    if (!res.ok) {
+      throw new UpstreamError(res.status, "Upstream responded with error")
+    }
+
+    const data: unknown = await res.json()
+
+    return this.parse(data)
+  }
+
+  private parse(data: unknown): Fact {
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      "fact" in data &&
+      "id" in data &&
+      typeof (data as any).fact === "string" &&
+      typeof (data as any).id === "string"
+    ) {
+      return data as Fact
+    }
+
+    throw new UpstreamError(502, "Malformed upstream response")
+  }
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/types/styles.d.ts ===
+declare module "*.css";
+

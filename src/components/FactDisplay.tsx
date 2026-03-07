@@ -1,7 +1,13 @@
+import { Fact } from "@/lib/factClient";
+
 type FactDisplayProps = {
-  fact: string;
+  fact: Fact;
 };
 
 export default function FactDisplay({ fact }: FactDisplayProps) {
-  return <p className="text-2xl md:text-4xl py-6">{fact}</p>;
+  return (
+    <div>
+      <p className="text-2xl md:text-4xl py-6">{fact.body}</p>
+    </div>
+  );
 }
