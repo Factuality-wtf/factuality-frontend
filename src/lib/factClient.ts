@@ -8,7 +8,7 @@ export type Fact = {
   modified: string
   property: string
   url: string
-  socialSharing: {
+  social_sharing: {
     title: string
     description: string
   }

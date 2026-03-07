@@ -5,6 +5,7 @@ const client = new FactClient()
 
 export async function GET() {
   try {
+    console.log("GET FACT ")
     const fact = await client.getFact()
     return NextResponse.json({ data: fact })
   } catch (error) {
