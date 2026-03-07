@@ -1,27 +1,13 @@
-import { FactClient } from "@/lib/factClient";
-import { Fact } from "@/lib/factClient";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const defaultFact: Fact = {
-  id: "default",
-  body: "Discover random facts about anything and everything all in one place!",
-  name: "Welcome",
-  created: "",
-  modified: "",
-  property: "factually.wtf",
-  url: "",
-  social_sharing: {
-    title: "Welcome to factually.wtf",
-    description:
-      "Discover random facts about anything and everything all in one place!",
-  },
-};
+import { FactClient, Fact } from "@/lib/factClient";
+import { DEFAULT_FACT } from "@/lib/factDefaults";
+import { buildFactUrl } from "@/lib/factUtils";
 
-const client = new FactClient();
-
-export const useFact = (initialFact: Fact = defaultFact) => {
+export const useFact = (initialFact: Fact = DEFAULT_FACT) => {
   const router = useRouter();
+
   const [fact, setFact] = useState<Fact>(initialFact);
   const [loading, setLoading] = useState(false);
 
@@ -29,19 +15,18 @@ export const useFact = (initialFact: Fact = defaultFact) => {
     setLoading(true);
 
     try {
+      const client = new FactClient();
       const nextFact = await client.getFact();
+
       setFact(nextFact);
 
-      const slug = nextFact.url.split("/").pop();
-
-      if (slug) {
-        router.push(`/facts/${nextFact.id}/${slug}`);
-      }
-    } catch (error) {
-      console.error("Fact fetch failed:", error);
+      router.push(buildFactUrl(nextFact));
+    } catch (err) {
+      console.error("Fetch failed:", err);
     } finally {
       setLoading(false);
     }
   };
+
   return { fact, fetchFact, loading };
 };

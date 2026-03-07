@@ -19,7 +19,7 @@ const Footer = () => {
             </div>
             <div className="text-lg break-normal"></div>
           </div>
-          <FooterLinks className="flex flex-col justify-end items-end text-right text-secondary text-4xl uppercase gap-y-2">
+          <FooterLinks className="hidden flex flex-col justify-end items-end text-right text-secondary text-4xl uppercase gap-y-2">
             <div className="hover:text-text">
               <a href="https://t0nylombardi.com">Github</a>
             </div>
