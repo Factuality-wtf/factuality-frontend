@@ -1,5 +1,7 @@
 import { config } from "./config"
 
+const MIN_LOADING_TIME = 400;
+
 export type Fact = {
   id: string
   body: string
@@ -25,6 +27,7 @@ export class UpstreamError extends Error {
 
 export class FactClient {
   async getFact(): Promise<Fact> {
+
     const res = await fetch(`${config.api.baseUrl}/fact/random`, {
       signal: AbortSignal.timeout(config.api.timeoutMs),
       headers: { Accept: "application/json" },

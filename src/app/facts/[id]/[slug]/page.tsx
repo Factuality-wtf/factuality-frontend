@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import FactSection from "@/components/FactSection";
 import { FactClient } from "@/lib/factClient";
+import FactController from "@components/Facts/FactsController";
 
 type PageProps = {
   params: Promise<{
@@ -44,5 +44,5 @@ export default async function FactPage({ params }: PageProps) {
 
   const fact = await getFact(id);
 
-  return <FactSection initialFact={fact} />;
+  return <FactController initialFact={fact} />;
 }

@@ -1,6 +1,6 @@
-import FactSection from "@components/FactSection";
+import FactController from "@components/Facts/FactsController";
 import { DEFAULT_FACT } from "@/lib/factDefaults";
 
 export default function Home() {
-  return <FactSection initialFact={DEFAULT_FACT} />;
+  return <FactController initialFact={DEFAULT_FACT} />;
 }
