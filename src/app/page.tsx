@@ -1,5 +1,3 @@
-"use client";
-
 import FactSection from "@components/FactSection";
 import { DEFAULT_FACT } from "@/lib/factDefaults";
 
