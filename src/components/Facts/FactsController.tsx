@@ -4,6 +4,7 @@ import { useFact } from "@/app/hooks/useFact";
 import FactDisplay from "./FactDisplay";
 import FactButton from "./FactButton";
 import { Fact } from "@/lib/factClient";
+import ShareButtons from "@components/ShareElements/ShareButtons";
 
 type Props = {
   initialFact: Fact;
@@ -18,7 +19,7 @@ export default function FactController({ initialFact }: Props) {
 
       <div className="flex gap-x-4 my-4">
         <FactButton onClick={fetchFact} loading={loading} />
-        {/* ShareButtons will go here later */}
+        <ShareButtons fact={fact} />
       </div>
     </div>
   );
