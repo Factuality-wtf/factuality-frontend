@@ -1,4 +1,5 @@
 "use client";
+
 import { IconContext } from "react-icons";
 import { RiTwitterXFill, RiBlueskyLine } from "react-icons/ri";
 import { PiCopyLight, PiFacebookLogoBold } from "react-icons/pi";
@@ -7,72 +8,56 @@ import {
   FacebookShareButton,
   BlueskyShareButton,
 } from "react-share";
+
 import { Fact } from "@/lib/factClient";
 
 type Props = {
   fact: Fact;
 };
 
+function shareUrl(base: string, source: string) {
+  return `${base}?utm_source=${source}&utm_medium=social&utm_campaign=fact_share`;
+}
+
 export default function ShareButtons({ fact }: Props) {
-  const url = `https://factually.wtf/${fact.id}/${fact.url}`;
-  const text = `Did you know?\n\n${fact.body}`;
+  const baseUrl = `https://factually.wtf/${fact.id}/${fact.url}`;
+  const text = `Did you know?\n\n${fact.body}\n\n`;
 
-  const open = (shareUrl: string) => {
-    window.open(shareUrl, "_blank", "noopener,noreferrer");
-  };
-
-  const shareX = () =>
-    open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        text,
-      )}&url=${encodeURIComponent(url)}`,
-    );
-
-  const shareBluesky = () =>
-    open(
-      `https://bsky.app/intent/compose?text=${encodeURIComponent(
-        `${text}\n\n${url}`,
-      )}`,
-    );
-
-  const shareFacebook = () =>
-    open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-    );
+  const twitterUrl = shareUrl(baseUrl, "twitter");
+  const blueskyUrl = shareUrl(baseUrl, "bluesky");
+  const facebookUrl = shareUrl(baseUrl, "facebook");
+  const copyUrl = `${baseUrl}?utm_source=copy&utm_medium=share&utm_campaign=fact_share`;
 
   const copyLink = async () => {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(copyUrl);
+    alert("Link copied!");
   };
 
   return (
     <div className="flex items-center gap-6">
       <IconContext.Provider
         value={{
-          className: "text-primary hover:text-secondary text-4xl cursor",
+          className:
+            "text-primary hover:text-secondary text-4xl cursor-pointer transition-all hover:scale-110",
         }}
       >
-        <XShareButton
-          title={text}
-          htmlTitle="Native button tooltip"
-          url={url}
-          aria-label="Share on X"
-        >
+        <XShareButton title={text} url={twitterUrl} aria-label="Share on X">
           <RiTwitterXFill />
         </XShareButton>
 
         <BlueskyShareButton
           title={text}
-          url={url}
+          url={blueskyUrl}
           aria-label="Share on Bluesky"
         >
           <RiBlueskyLine />
         </BlueskyShareButton>
 
-        <FacebookShareButton url={url} aria-label="Share this page on Facebook">
+        <FacebookShareButton url={facebookUrl} aria-label="Share on Facebook">
           <PiFacebookLogoBold />
         </FacebookShareButton>
 
-        <button onClick={copyLink} className="text-sm hover:underline">
+        <button onClick={copyLink} aria-label="Copy link">
           <PiCopyLight />
         </button>
       </IconContext.Provider>
