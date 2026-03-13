@@ -1,15 +1,11 @@
-"use client";
+'use client';
 
-import { IconContext } from "react-icons";
-import { RiTwitterXFill, RiBlueskyLine } from "react-icons/ri";
-import { PiCopyLight, PiFacebookLogoBold } from "react-icons/pi";
-import {
-  XShareButton,
-  FacebookShareButton,
-  BlueskyShareButton,
-} from "react-share";
+import { IconContext } from 'react-icons';
+import { RiTwitterXFill, RiBlueskyLine } from 'react-icons/ri';
+import { PiCopyLight, PiFacebookLogoBold } from 'react-icons/pi';
+import { XShareButton, FacebookShareButton, BlueskyShareButton } from 'react-share';
 
-import { Fact } from "@/lib/factClient";
+import { Fact } from '@/lib/api/facts/factClient';
 
 type Props = {
   fact: Fact;
@@ -23,14 +19,14 @@ export default function ShareButtons({ fact }: Props) {
   const baseUrl = `https://factually.wtf/${fact.id}/${fact.url}`;
   const text = `Did you know?\n\n${fact.body}\n\n`;
 
-  const twitterUrl = shareUrl(baseUrl, "twitter");
-  const blueskyUrl = shareUrl(baseUrl, "bluesky");
-  const facebookUrl = shareUrl(baseUrl, "facebook");
+  const twitterUrl = shareUrl(baseUrl, 'twitter');
+  const blueskyUrl = shareUrl(baseUrl, 'bluesky');
+  const facebookUrl = shareUrl(baseUrl, 'facebook');
   const copyUrl = `${baseUrl}?utm_source=copy&utm_medium=share&utm_campaign=fact_share`;
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(copyUrl);
-    alert("Link copied!");
+    alert('Link copied!');
   };
 
   return (
@@ -38,18 +34,14 @@ export default function ShareButtons({ fact }: Props) {
       <IconContext.Provider
         value={{
           className:
-            "text-primary hover:text-secondary text-4xl cursor-pointer transition-all hover:scale-110",
+            'text-primary hover:text-secondary text-4xl cursor-pointer transition-all hover:scale-110',
         }}
       >
         <XShareButton title={text} url={twitterUrl} aria-label="Share on X">
           <RiTwitterXFill />
         </XShareButton>
 
-        <BlueskyShareButton
-          title={text}
-          url={blueskyUrl}
-          aria-label="Share on Bluesky"
-        >
+        <BlueskyShareButton title={text} url={blueskyUrl} aria-label="Share on Bluesky">
           <RiBlueskyLine />
         </BlueskyShareButton>
 

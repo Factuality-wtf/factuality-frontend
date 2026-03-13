@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { FactClient, Fact } from "@/lib/factClient";
-import { DEFAULT_FACT } from "@/lib/factDefaults";
-import { buildFactUrl } from "@/lib/factUtils";
+import { FactClient, Fact } from '@/lib/facts/factClient';
+import { DEFAULT_FACT } from '@/lib/facts/factDefaults';
+import { buildFactUrl } from '@/lib/facts/factUtils';
 
 const MIN_LOADING_TIME = 5000;
 
@@ -25,7 +25,7 @@ export const useFact = (initialFact: Fact = DEFAULT_FACT) => {
 
       router.push(buildFactUrl(nextFact));
     } catch (err) {
-      console.error("Fetch failed:", err);
+      console.error('Fetch failed:', err);
     } finally {
       const elapsed = Date.now() - start;
 

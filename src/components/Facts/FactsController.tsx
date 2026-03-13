@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useFact } from "@/app/hooks/useFact";
-import FactDisplay from "./FactDisplay";
-import FactButton from "./FactButton";
-import { Fact } from "@/lib/factClient";
-import ShareButtons from "@components/ShareElements/ShareButtons";
+import { useFact } from '@/app/hooks/useFact';
+import FactDisplay from './FactDisplay';
+import FactButton from './FactButton';
+import { Fact } from '@/lib/api/facts/factClient';
+import ShareButtons from '@components/ShareElements/ShareButtons';
 
 type Props = {
   initialFact: Fact;

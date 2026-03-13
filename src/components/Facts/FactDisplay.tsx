@@ -1,4 +1,4 @@
-import { Fact } from "@/lib/factClient";
+import { Fact } from '@/lib/api/facts/factClient';
 
 type FactDisplayProps = {
   fact: Fact;

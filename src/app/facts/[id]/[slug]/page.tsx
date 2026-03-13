@@ -1,7 +1,7 @@
-import { cache } from "react";
-import type { Metadata } from "next";
-import { FactClient } from "@/lib/factClient";
-import FactController from "@components/Facts/FactsController";
+import { cache } from 'react';
+import type { Metadata } from 'next';
+import { FactClient } from '@/lib/api/facts/factClient';
+import FactController from '@components/Facts/FactsController';
 
 type PageProps = {
   params: Promise<{
@@ -16,24 +16,22 @@ export const getFact = cache(async (id: string) => {
   return client.getFactById(id);
 });
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id, slug } = await params;
 
   const fact = await getFact(id);
 
   return {
-    title: "Did You Know?",
+    title: 'Did You Know?',
     description: fact.body,
     openGraph: {
-      title: "Did You Know?",
+      title: 'Did You Know?',
       description: fact.body,
       url: `/${id}/${slug}`,
-      type: "article",
+      type: 'article',
     },
     twitter: {
-      card: "summary_large_image",
+      card: 'summary_large_image',
       description: fact.name,
     },
   };

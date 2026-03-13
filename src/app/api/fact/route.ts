@@ -1,24 +1,18 @@
-import { NextResponse } from "next/server"
-import { FactClient, UpstreamError } from "@/lib/factClient"
+import { NextResponse } from 'next/server';
+import { FactClient, UpstreamError } from '@/lib/api/facts/factClient';
 
-const client = new FactClient()
+const client = new FactClient();
 
 export async function GET() {
   try {
-    console.log("GET FACT ")
-    const fact = await client.getFact()
-    return NextResponse.json({ data: fact })
+    console.log('GET FACT ');
+    const fact = await client.getFact();
+    return NextResponse.json({ data: fact });
   } catch (error) {
     if (error instanceof UpstreamError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.status }
-      )
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
-    return NextResponse.json(
-      { error: "Service unavailable" },
-      { status: 503 }
-    )
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
   }
 }

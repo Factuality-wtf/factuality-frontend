@@ -15,6 +15,7 @@
     0 2px 4px -2px rgb(0 0 0 / 0.1);
   display: grid;
   place-items: center;
+  cursor: pointer;
 }
 
 .btn:hover {
