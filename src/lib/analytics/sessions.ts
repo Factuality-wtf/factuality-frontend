@@ -1,4 +1,4 @@
-const SESSION_STORAGE_KEY = 'factually_infod';
+const SESSION_STORAGE_KEY = 'factually_info';
 
 export const getSessionId = (): string => {
   try {
