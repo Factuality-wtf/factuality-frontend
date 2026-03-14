@@ -1,21 +1,23 @@
 'use client';
 
+import { Fact } from '@/lib/facts/factsTypes';
 import { useFact } from '@/app/hooks/useFact';
 import FactDisplay from './FactDisplay';
 import FactButton from './FactButton';
-import { Fact } from '@/lib/api/facts/factClient';
 import ShareButtons from '@components/ShareElements/ShareButtons';
 
 type Props = {
   initialFact: Fact;
+  initialError?: string | null;
 };
 
-export default function FactController({ initialFact }: Props) {
-  const { fact, fetchFact, loading } = useFact(initialFact);
+export default function FactController({ initialFact, initialError = null }: Props) {
+  const { fact, fetchFact, loading, error } = useFact(initialFact);
+  const displayError = error ?? initialError;
 
   return (
     <div className="flex flex-col gap-y-4">
-      <FactDisplay fact={fact} />
+      <FactDisplay fact={fact} error={displayError} />
 
       <div className="flex gap-x-4 my-4">
         <FactButton onClick={fetchFact} loading={loading} />

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { FactClient, Fact } from '@/lib/facts/factClient';
+import { FactClient } from '@/lib/facts/factClient';
+import { Fact } from '@/lib/facts/factsTypes';
 import { DEFAULT_FACT } from '@/lib/facts/factDefaults';
 import { buildFactUrl } from '@/lib/facts/factUtils';
 
@@ -12,10 +13,13 @@ export const useFact = (initialFact: Fact = DEFAULT_FACT) => {
 
   const [fact, setFact] = useState<Fact>(initialFact);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchFact = async () => {
     setLoading(true);
+    setError(null);
     const start = Date.now();
+    const initialError = "500 Brain not here. Coul'nt fetch fact";
 
     try {
       const client = new FactClient();
@@ -26,6 +30,7 @@ export const useFact = (initialFact: Fact = DEFAULT_FACT) => {
       router.push(buildFactUrl(nextFact));
     } catch (err) {
       console.error('Fetch failed:', err);
+      setError(initialError);
     } finally {
       const elapsed = Date.now() - start;
 
@@ -36,5 +41,5 @@ export const useFact = (initialFact: Fact = DEFAULT_FACT) => {
     }
   };
 
-  return { fact, fetchFact, loading };
+  return { fact, fetchFact, loading, error };
 };

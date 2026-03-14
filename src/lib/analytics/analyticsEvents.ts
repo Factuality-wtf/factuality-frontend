@@ -1,9 +1,10 @@
 import { sendAnalyticsEvent } from './analyticsClient';
 
-export function trackPageView(factId?: string): void {
+export function trackPageView(factId?: string, path?: string): void {
   sendAnalyticsEvent({
     type: 'view',
     factId,
+    path,
   });
 }
 
@@ -15,9 +16,9 @@ export function trackShare(factId: string, target: string): void {
   });
 }
 
-export function trackClick(name: string): void {
+export function trackCopy(factId?: string): void {
   sendAnalyticsEvent({
-    type: 'click',
-    source: name,
+    type: 'copy',
+    factId,
   });
 }

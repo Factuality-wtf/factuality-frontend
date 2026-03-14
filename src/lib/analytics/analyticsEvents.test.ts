@@ -1,16 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as analyticsClient from './analyticsClient';
-import { trackClick, trackPageView, trackShare } from './analyticsEvents';
+import { trackCopy, trackPageView, trackShare } from './analyticsEvents';
 
 describe('analyticsEvents', () => {
   it('tracks page views', () => {
     const spy = vi.spyOn(analyticsClient, 'sendAnalyticsEvent').mockResolvedValue(undefined);
 
-    trackPageView('abc');
+    trackPageView('abc', '/facts/abc/test');
 
     expect(spy).toHaveBeenCalledWith({
       type: 'view',
       factId: 'abc',
+      path: '/facts/abc/test',
     });
   });
 
@@ -26,14 +27,14 @@ describe('analyticsEvents', () => {
     });
   });
 
-  it('tracks clicks', () => {
+  it('tracks copy actions', () => {
     const spy = vi.spyOn(analyticsClient, 'sendAnalyticsEvent').mockResolvedValue(undefined);
 
-    trackClick('nav-cta');
+    trackCopy('abc');
 
     expect(spy).toHaveBeenCalledWith({
-      type: 'click',
-      source: 'nav-cta',
+      type: 'copy',
+      factId: 'abc',
     });
   });
 });

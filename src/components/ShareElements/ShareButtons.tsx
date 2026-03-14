@@ -6,6 +6,7 @@ import { PiCopyLight, PiFacebookLogoBold } from 'react-icons/pi';
 import { XShareButton, FacebookShareButton, BlueskyShareButton } from 'react-share';
 
 import { Fact } from '@/lib/api/facts/factClient';
+import { trackCopy, trackShare } from '@/lib/analytics/analyticsEvents';
 
 type Props = {
   fact: Fact;
@@ -26,6 +27,7 @@ export default function ShareButtons({ fact }: Props) {
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(copyUrl);
+    trackCopy(fact.id);
     alert('Link copied!');
   };
 
@@ -37,15 +39,29 @@ export default function ShareButtons({ fact }: Props) {
             'text-primary hover:text-secondary text-4xl cursor-pointer transition-all hover:scale-110',
         }}
       >
-        <XShareButton title={text} url={twitterUrl} aria-label="Share on X">
+        <XShareButton
+          title={text}
+          url={twitterUrl}
+          aria-label="Share on X"
+          onClick={() => trackShare(fact.id, 'twitter')}
+        >
           <RiTwitterXFill />
         </XShareButton>
 
-        <BlueskyShareButton title={text} url={blueskyUrl} aria-label="Share on Bluesky">
+        <BlueskyShareButton
+          title={text}
+          url={blueskyUrl}
+          aria-label="Share on Bluesky"
+          onClick={() => trackShare(fact.id, 'bluesky')}
+        >
           <RiBlueskyLine />
         </BlueskyShareButton>
 
-        <FacebookShareButton url={facebookUrl} aria-label="Share on Facebook">
+        <FacebookShareButton
+          url={facebookUrl}
+          aria-label="Share on Facebook"
+          onClick={() => trackShare(fact.id, 'facebook')}
+        >
           <PiFacebookLogoBold />
         </FacebookShareButton>
 

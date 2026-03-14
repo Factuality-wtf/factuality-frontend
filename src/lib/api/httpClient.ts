@@ -10,12 +10,41 @@ export class ApiError extends Error {
 }
 
 export class HttpClient {
+  private resolveUrl(path: string): string {
+    if (/^https?:\/\//.test(path)) {
+      return path;
+    }
+
+    const base = config.api.baseUrl.trim();
+    if (!base) {
+      throw new Error('Missing API base URL');
+    }
+
+    let url: URL;
+    try {
+      url = new URL(base);
+    } catch {
+      throw new Error(`Invalid API base URL: ${base}`);
+    }
+
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${url.origin}${url.pathname.replace(/\/+$/, '')}${normalizedPath}`;
+  }
+
   async get<T>(path: string): Promise<T> {
-    const res = await fetch(`${config.api.baseUrl}${path}`, {
-      signal: AbortSignal.timeout(config.api.timeoutMs),
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    });
+    let res: Response;
+    try {
+      res = await fetch(this.resolveUrl(path), {
+        signal: AbortSignal.timeout(config.api.timeoutMs),
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') {
+        throw new ApiError(504, 'Request timed out');
+      }
+      throw new ApiError(503, 'Unable to connect to backend');
+    }
 
     if (!res.ok) {
       throw new ApiError(res.status, 'Upstream responded with error');
@@ -26,7 +55,7 @@ export class HttpClient {
   }
 
   async post<T>(path: string, body: unknown): Promise<T> {
-    const res = await fetch(`${config.api.baseUrl}${path}`, {
+    const res = await fetch(this.resolveUrl(path), {
       signal: AbortSignal.timeout(config.api.timeoutMs),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -36,6 +65,7 @@ export class HttpClient {
     });
 
     if (!res.ok) {
+      console.log('RES ERROR: ', res);
       throw new ApiError(res.status, 'Upstream responded with error');
     }
 
