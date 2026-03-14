@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky && husky install"
+    "prepare": "husky"
   },
   "dependencies": {
     "@icons-pack/react-simple-icons": "^13.12.0",
@@ -33,7 +33,7 @@
     "eslint": "^9.39.3",
     "eslint-config-next": "15.2.4",
     "eslint-config-prettier": "^10.1.8",
-    "husky": "^8.0.0",
+    "husky": "^9.1.7",
     "lint-staged": "^16.3.3",
     "prettier": "^3.8.1",
     "prettier-eslint": "^16.4.2",
