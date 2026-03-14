@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as analyticsClient from './analyticsClient';
-import { trackCopy, trackPageView, trackShare } from './analyticsEvents';
+import * as analyticsClient from './client';
+import { trackCopy, trackPageView, trackShare } from './events';
 
 describe('analyticsEvents', () => {
   it('tracks page views', () => {

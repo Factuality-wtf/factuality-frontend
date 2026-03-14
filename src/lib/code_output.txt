@@ -1,0 +1,784 @@
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/analytics/analyticsClient.test.ts ===
+import { describe, expect, it, vi } from 'vitest';
+import { ApiError, httpClient } from '../api/httpClient';
+import { sendAnalyticsEvent } from './analyticsClient';
+
+describe('sendAnalyticsEvent', () => {
+  it('posts analytics event with browser metadata', async () => {
+    vi.spyOn(httpClient, 'post').mockResolvedValue(undefined);
+    vi.stubGlobal('document', { referrer: 'https://example.com/source' });
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 Chrome/133.0.0.0' });
+    vi.stubGlobal('window', {
+      location: {
+        search: '?utm_source=google&utm_medium=search&utm_campaign=spring',
+        pathname: '/facts/11111111-1111-4111-8111-111111111111/fact-slug',
+      },
+      sessionStorage: {
+        getItem: vi.fn().mockReturnValue('session-123'),
+        setItem: vi.fn(),
+      },
+    });
+
+    await sendAnalyticsEvent({
+      type: 'view',
+      factId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(httpClient.post).toHaveBeenCalledWith('/analytics/event', {
+      event_type: 'view',
+      fact_id: '11111111-1111-4111-8111-111111111111',
+      path: '/facts/11111111-1111-4111-8111-111111111111/fact-slug',
+      share_target: null,
+      source: 'google',
+      medium: 'search',
+      campaign: 'spring',
+      experiment: null,
+      variant: null,
+      referrer: 'https://example.com/source',
+      user_agent: 'Mozilla/5.0 Chrome/133.0.0.0',
+      session_id: 'session-123',
+      country: null,
+      device: 'desktop',
+      browser: 'chrome',
+      ip_address: null,
+    });
+  });
+
+  it('sends root path with null fact id when fact id is missing/invalid', async () => {
+    vi.spyOn(httpClient, 'post').mockResolvedValue(undefined);
+    vi.stubGlobal('document', { referrer: '' });
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 Safari/537.36' });
+    vi.stubGlobal('window', {
+      location: { search: '', pathname: '/' },
+      sessionStorage: {
+        getItem: vi.fn().mockReturnValue('session-123'),
+        setItem: vi.fn(),
+      },
+    });
+
+    await sendAnalyticsEvent({
+      type: 'view',
+      factId: 'default',
+    });
+
+    expect(httpClient.post).toHaveBeenCalledWith(
+      '/analytics/event',
+      expect.objectContaining({
+        event_type: 'view',
+        fact_id: null,
+        path: '/',
+        source: 'direct',
+        medium: 'none',
+      }),
+    );
+  });
+
+  it('swallows fetch failures without logging noise', async () => {
+    const err = new TypeError('Failed to fetch');
+    vi.spyOn(httpClient, 'post').mockRejectedValue(err);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('document', { referrer: '' });
+    vi.stubGlobal('navigator', { userAgent: 'vitest-agent' });
+    vi.stubGlobal('window', {
+      location: { search: '', pathname: '/' },
+      sessionStorage: {
+        getItem: vi.fn().mockReturnValue('session-123'),
+        setItem: vi.fn(),
+      },
+    });
+
+    await expect(
+      sendAnalyticsEvent({
+        type: 'open',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('logs unexpected analytics failures', async () => {
+    const err = new ApiError(500, 'Upstream responded with error');
+    vi.spyOn(httpClient, 'post').mockRejectedValue(err);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('document', { referrer: '' });
+    vi.stubGlobal('navigator', { userAgent: 'vitest-agent' });
+    vi.stubGlobal('window', {
+      location: { search: '', pathname: '/' },
+      sessionStorage: {
+        getItem: vi.fn().mockReturnValue('session-123'),
+        setItem: vi.fn(),
+      },
+    });
+
+    await expect(
+      sendAnalyticsEvent({
+        type: 'open',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith('Analytics failed', err);
+  });
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/analytics/analyticsClient.ts ===
+import { httpClient } from '../api/httpClient';
+import { AnalyticsEvent } from './analyticsTypes';
+import { getSessionId } from './analyticsSessions';
+
+const SESSION_STORAGE_KEY = 'factually_infod';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SEARCH_ENGINES = ['google.', 'bing.', 'duckduckgo.', 'yahoo.', 'baidu.', 'yandex.'];
+
+type TrafficAttribution = {
+  source: string;
+  medium: string;
+  campaign: string | null;
+  referrer: string | null;
+};
+
+function isUuid(value?: string): value is string {
+  return typeof value === 'string' && UUID_REGEX.test(value);
+}
+
+function parseBrowser(userAgent: string): string {
+  if (/Edg\//i.test(userAgent)) return 'edge';
+  if (/Chrome\//i.test(userAgent) && !/Edg\//i.test(userAgent)) return 'chrome';
+  if (/Safari\//i.test(userAgent) && !/Chrome\//i.test(userAgent)) return 'safari';
+  if (/Firefox\//i.test(userAgent)) return 'firefox';
+  return 'other';
+}
+
+function parseDevice(userAgent: string): string {
+  if (/iPhone|Android.+Mobile|Mobile/i.test(userAgent)) return 'mobile';
+  if (/iPad|Tablet|Android/i.test(userAgent)) return 'tablet';
+  return 'desktop';
+}
+
+function isSearchReferrer(hostname: string): boolean {
+  return SEARCH_ENGINES.some((engine) => hostname.includes(engine));
+}
+
+function getAttribution(): TrafficAttribution {
+  const searchParams = new URLSearchParams(window.location.search);
+  const utmSource = searchParams.get('utm_source');
+  const utmMedium = searchParams.get('utm_medium');
+  const utmCampaign = searchParams.get('utm_campaign');
+  const referrer = document.referrer || null;
+
+  if (utmSource) {
+    return {
+      source: utmSource,
+      medium: utmMedium ?? 'campaign',
+      campaign: utmCampaign,
+      referrer,
+    };
+  }
+
+  if (!referrer) {
+    return {
+      source: 'direct',
+      medium: 'none',
+      campaign: utmCampaign,
+      referrer: null,
+    };
+  }
+
+  try {
+    const referrerHost = new URL(referrer).hostname.toLowerCase();
+    return {
+      source: referrerHost.replace(/^www\./, ''),
+      medium: isSearchReferrer(referrerHost) ? 'search' : 'referral',
+      campaign: utmCampaign,
+      referrer,
+    };
+  } catch {
+    return {
+      source: 'referrer_unknown',
+      medium: 'referral',
+      campaign: utmCampaign,
+      referrer,
+    };
+  }
+}
+
+function isIgnoredAnalyticsError(error: unknown): boolean {
+  if (error instanceof TypeError) {
+    return true;
+  }
+
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return true;
+  }
+
+  return false;
+}
+
+export async function sendAnalyticsEvent(event: AnalyticsEvent): Promise<void> {
+  try {
+    const userAgent = event.userAgent ?? navigator.userAgent ?? null;
+    const attribution = getAttribution();
+    const factId = isUuid(event.factId) ? event.factId : null;
+    const path = event.path ?? window.location.pathname ?? '/';
+
+    const payload = {
+      event_type: event.type,
+      fact_id: factId,
+      path,
+      share_target: event.shareTarget ?? null,
+      source: event.source ?? attribution.source,
+      medium: event.medium ?? attribution.medium,
+      campaign: event.campaign ?? attribution.campaign,
+      experiment: event.experiment ?? null,
+      variant: event.variant ?? null,
+      referrer: event.referrer ?? attribution.referrer,
+      user_agent: userAgent,
+      session_id: event.sessionId ?? getSessionId(),
+      country: event.country ?? null,
+      device: event.device ?? (userAgent ? parseDevice(userAgent) : null),
+      browser: event.browser ?? (userAgent ? parseBrowser(userAgent) : null),
+      ip_address: event.ipAddress ?? null,
+    };
+
+    await httpClient.post('/analytics/event', payload);
+  } catch (error) {
+    if (isIgnoredAnalyticsError(error)) {
+      return;
+    }
+
+    console.error('Analytics failed', error);
+  }
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/analytics/analyticsEvents.test.ts ===
+import { describe, expect, it, vi } from 'vitest';
+import * as analyticsClient from './analyticsClient';
+import { trackCopy, trackPageView, trackShare } from './analyticsEvents';
+
+describe('analyticsEvents', () => {
+  it('tracks page views', () => {
+    const spy = vi.spyOn(analyticsClient, 'sendAnalyticsEvent').mockResolvedValue(undefined);
+
+    trackPageView('abc', '/facts/abc/test');
+
+    expect(spy).toHaveBeenCalledWith({
+      type: 'view',
+      factId: 'abc',
+      path: '/facts/abc/test',
+    });
+  });
+
+  it('tracks shares', () => {
+    const spy = vi.spyOn(analyticsClient, 'sendAnalyticsEvent').mockResolvedValue(undefined);
+
+    trackShare('abc', 'twitter');
+
+    expect(spy).toHaveBeenCalledWith({
+      type: 'share',
+      factId: 'abc',
+      shareTarget: 'twitter',
+    });
+  });
+
+  it('tracks copy actions', () => {
+    const spy = vi.spyOn(analyticsClient, 'sendAnalyticsEvent').mockResolvedValue(undefined);
+
+    trackCopy('abc');
+
+    expect(spy).toHaveBeenCalledWith({
+      type: 'copy',
+      factId: 'abc',
+    });
+  });
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/analytics/analyticsEvents.ts ===
+import { sendAnalyticsEvent } from './analyticsClient';
+
+export function trackPageView(factId?: string, path?: string): void {
+  sendAnalyticsEvent({
+    type: 'view',
+    factId,
+    path,
+  });
+}
+
+export function trackShare(factId: string, target: string): void {
+  sendAnalyticsEvent({
+    type: 'share',
+    factId,
+    shareTarget: target,
+  });
+}
+
+export function trackCopy(factId?: string): void {
+  sendAnalyticsEvent({
+    type: 'copy',
+    factId,
+  });
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/analytics/analyticsSessions.ts ===
+const SESSION_STORAGE_KEY = 'factually_infod';
+
+export const getSessionId = (): string => {
+  try {
+    const existing = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (existing) return existing;
+
+    const generated =
+      typeof crypto?.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, generated);
+    return generated;
+  } catch {
+    return 'session-unavailable';
+  }
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/analytics/analyticsTypes.ts ===
+export type AnalyticsEventType = 'view' | 'share' | 'copy' | 'open';
+
+export interface AnalyticsEvent {
+  type: AnalyticsEventType;
+  factId?: string;
+  path?: string;
+  shareTarget?: string;
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  experiment?: string;
+  variant?: string;
+  referrer?: string;
+  userAgent?: string;
+  sessionId?: string;
+  country?: string;
+  device?: string;
+  browser?: string;
+  ipAddress?: string;
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/api/apiError.ts ===
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/api/httpClient.test.ts ===
+import { describe, expect, it, vi } from 'vitest';
+import { ApiError, HttpClient } from './httpClient';
+
+describe('HttpClient', () => {
+  it('sends GET requests and returns JSON payloads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ id: 'fact-1' }),
+    });
+    const timeoutSpy = vi
+      .spyOn(AbortSignal, 'timeout')
+      .mockReturnValue(new AbortController().signal);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new HttpClient();
+    await expect(client.get<{ id: string }>('/fact/random')).resolves.toEqual({
+      id: 'fact-1',
+    });
+
+    expect(timeoutSpy).toHaveBeenCalledWith(1000);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.test/fact/random',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      }),
+    );
+  });
+
+  it('normalizes GET path when slash is missing', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ id: 'fact-2' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(new AbortController().signal);
+
+    const client = new HttpClient();
+    await expect(client.get<{ id: string }>('fact/random')).resolves.toEqual({
+      id: 'fact-2',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.test/fact/random',
+      expect.any(Object),
+    );
+  });
+
+  it('throws ApiError when GET response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+      }),
+    );
+
+    const client = new HttpClient();
+
+    await expect(client.get('/fact/random')).rejects.toEqual(
+      expect.objectContaining({
+        status: 502,
+        message: 'Upstream responded with error',
+      }),
+    );
+  });
+
+  it('throws ApiError(503) when GET cannot connect', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(new AbortController().signal);
+
+    const client = new HttpClient();
+
+    await expect(client.get('/fact/random')).rejects.toEqual(
+      expect.objectContaining({
+        status: 503,
+        message: 'Unable to connect to backend',
+      }),
+    );
+  });
+
+  it('throws ApiError(504) when GET times out', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new DOMException('Request timed out', 'TimeoutError')),
+    );
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(new AbortController().signal);
+
+    const client = new HttpClient();
+
+    await expect(client.get('/fact/random')).rejects.toEqual(
+      expect.objectContaining({
+        status: 504,
+        message: 'Request timed out',
+      }),
+    );
+  });
+
+  it('sends POST requests with JSON body', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ success: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(new AbortController().signal);
+
+    const client = new HttpClient();
+    await expect(
+      client.post<{ success: boolean }>('/analytics/event', {
+        type: 'view',
+      }),
+    ).resolves.toEqual({ success: true });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.test/analytics/event',
+      expect.objectContaining({
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'view' }),
+      }),
+    );
+  });
+
+  it('normalizes POST path when slash is missing', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ success: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(new AbortController().signal);
+
+    const client = new HttpClient();
+    await expect(
+      client.post<{ success: boolean }>('analytics/event', { type: 'view' }),
+    ).resolves.toEqual({ success: true });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.test/analytics/event',
+      expect.any(Object),
+    );
+  });
+
+  it('throws ApiError when POST response is not ok', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+      }),
+    );
+    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(new AbortController().signal);
+
+    const client = new HttpClient();
+
+    await expect(client.post('/analytics/event', {})).rejects.toBeInstanceOf(ApiError);
+  });
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/api/httpClient.ts ===
+import { config } from '../config';
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+export class HttpClient {
+  private resolveUrl(path: string): string {
+    if (/^https?:\/\//.test(path)) {
+      return path;
+    }
+
+    const base = config.api.baseUrl.trim();
+    if (!base) {
+      throw new Error('Missing API base URL');
+    }
+
+    let url: URL;
+    try {
+      url = new URL(base);
+    } catch {
+      throw new Error(`Invalid API base URL: ${base}`);
+    }
+
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${url.origin}${url.pathname.replace(/\/+$/, '')}${normalizedPath}`;
+  }
+
+  async get<T>(path: string): Promise<T> {
+    let res: Response;
+    try {
+      res = await fetch(this.resolveUrl(path), {
+        signal: AbortSignal.timeout(config.api.timeoutMs),
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') {
+        throw new ApiError(504, 'Request timed out');
+      }
+      throw new ApiError(503, 'Unable to connect to backend');
+    }
+
+    if (!res.ok) {
+      throw new ApiError(res.status, 'Upstream responded with error');
+    }
+
+    const data: unknown = await res.json();
+    return data as T;
+  }
+
+  async post<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(this.resolveUrl(path), {
+      signal: AbortSignal.timeout(config.api.timeoutMs),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(body),
+      keepalive: true,
+    });
+
+    if (!res.ok) {
+      console.log('RES ERROR: ', res);
+      throw new ApiError(res.status, 'Upstream responded with error');
+    }
+
+    const data: unknown = await res.json();
+    return data as T;
+  }
+}
+
+export const httpClient = new HttpClient();
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/config.ts ===
+import { env } from "./env"
+
+export const config = {
+  api: {
+    baseUrl: env.NEXT_PUBLIC_API_URL,
+    timeoutMs: 1000,
+  },
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/env.ts ===
+import { z } from 'zod';
+
+const schema = z.object({
+  NEXT_PUBLIC_API_URL: z.string().trim().url(),
+});
+
+export const env = schema.parse({
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/facts/factClient.test.ts ===
+import { describe, expect, it, vi } from 'vitest';
+import { httpClient } from '../api/httpClient';
+import { FactClient } from './factClient';
+import type { Fact } from './factsTypes';
+
+const FACT: Fact = {
+  id: '123',
+  body: 'A group of flamingos is called a flamboyance.',
+  name: 'Flamingo fact',
+  created: '',
+  modified: '',
+  property: 'factually.wtf',
+  url: '',
+  social_sharing: {
+    title: 'Flamingo fact',
+    description: 'A group of flamingos is called a flamboyance.',
+  },
+};
+
+describe('FactClient', () => {
+  it('fetches and parses a random fact', async () => {
+    vi.spyOn(httpClient, 'get').mockResolvedValue(FACT);
+    const client = new FactClient();
+
+    await expect(client.getFact()).resolves.toEqual(FACT);
+    expect(httpClient.get).toHaveBeenCalledWith('/fact/random');
+  });
+
+  it('fetches and parses a fact by id', async () => {
+    vi.spyOn(httpClient, 'get').mockResolvedValue(FACT);
+    const client = new FactClient();
+
+    await expect(client.getFactById('123')).resolves.toEqual(FACT);
+    expect(httpClient.get).toHaveBeenCalledWith('/fact/123');
+  });
+
+  it('throws when upstream payload is malformed', async () => {
+    vi.spyOn(httpClient, 'get').mockResolvedValue({ nope: true } as never);
+    const client = new FactClient();
+
+    await expect(client.getFact()).rejects.toThrow('Malformed upstream response');
+  });
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/facts/factClient.ts ===
+import { httpClient } from '../api/httpClient';
+import { Fact } from './factsTypes';
+
+export class FactClient {
+  async getFact(): Promise<Fact> {
+    const data = await httpClient.get<Fact>('/fact/random');
+    return this.parse(data);
+  }
+
+  async getFactById(id: string): Promise<Fact> {
+    const data = await httpClient.get<Fact>(`/fact/${id}`);
+    return this.parse(data);
+  }
+
+  private parse(data: unknown): Fact {
+    if (typeof data === 'object' && data !== null && 'body' in data && 'id' in data) {
+      return data as Fact;
+    }
+
+    throw new Error('Malformed upstream response');
+  }
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/facts/factDefaults.ts ===
+import { Fact } from './factClient';
+
+export const DEFAULT_FACT: Fact = {
+  id: 'default',
+  body: 'Discover random facts about anything and everything all in one place!',
+  created: '',
+  modified: '',
+  name: 'Welcome',
+  property: 'factually.wtf',
+  social_sharing: {
+    title: 'Welcome',
+    description: 'Discover random facts about anything and everything all in one place!',
+  },
+  url: '',
+};
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/facts/factUtils.test.ts ===
+import { describe, expect, it } from 'vitest';
+import { buildFactUrl, createFactSlug } from './factUtils';
+
+describe('factUtils', () => {
+  it('creates URL-safe slugs', () => {
+    expect(createFactSlug('  Cats, Dogs & Mice!  ')).toBe('cats-dogs-mice');
+  });
+
+  it('builds canonical fact URLs', () => {
+    const url = buildFactUrl({
+      id: '42',
+      body: 'Honey never spoils.',
+      name: 'honey',
+      created: '',
+      modified: '',
+      property: 'factually.wtf',
+      url: '',
+      social_sharing: {
+        title: 'Honey',
+        description: 'Honey never spoils.',
+      },
+    });
+
+    expect(url).toBe('/facts/42/honey-never-spoils');
+  });
+});
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/facts/factUtils.ts ===
+import { Fact } from './factClient';
+
+export function createFactSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
+export function buildFactUrl(fact: Fact): string {
+  const slug = createFactSlug(fact.body);
+  return `/facts/${fact.id}/${slug}`;
+}
+
+
+=== /Users/sic/dev/factually.wtf/facts_fe/src/lib/facts/factsTypes.ts ===
+export type Fact = {
+  id: string;
+  body: string;
+  name: string;
+  created: string;
+  modified: string;
+  property: string;
+  url: string;
+  social_sharing: {
+    title: string;
+    description: string;
+  };
+};
+

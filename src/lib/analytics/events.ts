@@ -1,4 +1,4 @@
-import { sendAnalyticsEvent } from './analyticsClient';
+import { sendAnalyticsEvent } from './client';
 
 export function trackPageView(factId?: string, path?: string): void {
   sendAnalyticsEvent({

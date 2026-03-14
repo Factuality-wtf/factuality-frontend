@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError, httpClient } from '../api/httpClient';
-import { sendAnalyticsEvent } from './analyticsClient';
+import { sendAnalyticsEvent } from './client';
 
 describe('sendAnalyticsEvent', () => {
   it('posts analytics event with browser metadata', async () => {

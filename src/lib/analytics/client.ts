@@ -1,7 +1,7 @@
 import { httpClient } from '../api/httpClient';
-import { AnalyticsEvent } from './analyticsTypes';
+import { AnalyticsEvent } from './types';
+import { getSessionId } from './sessions';
 
-const SESSION_STORAGE_KEY = 'factually_infod';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SEARCH_ENGINES = ['google.', 'bing.', 'duckduckgo.', 'yahoo.', 'baidu.', 'yandex.'];
 
@@ -74,23 +74,6 @@ function getAttribution(): TrafficAttribution {
       campaign: utmCampaign,
       referrer,
     };
-  }
-}
-
-function getSessionId(): string {
-  try {
-    const existing = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (existing) return existing;
-
-    const generated =
-      typeof crypto?.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-    window.sessionStorage.setItem(SESSION_STORAGE_KEY, generated);
-    return generated;
-  } catch {
-    return 'session-unavailable';
   }
 }
 

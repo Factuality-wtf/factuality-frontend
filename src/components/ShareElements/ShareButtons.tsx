@@ -6,7 +6,7 @@ import { PiCopyLight, PiFacebookLogoBold } from 'react-icons/pi';
 import { XShareButton, FacebookShareButton, BlueskyShareButton } from 'react-share';
 
 import { Fact } from '@/lib/api/facts/factClient';
-import { trackCopy, trackShare } from '@/lib/analytics/analyticsEvents';
+import { trackCopy, trackShare } from '@/lib/analytics/events';
 
 type Props = {
   fact: Fact;
