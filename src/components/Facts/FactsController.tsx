@@ -16,10 +16,10 @@ export default function FactController({ initialFact, initialError = null }: Pro
   const displayError = error ?? initialError;
 
   return (
-    <div className="flex flex-col gap-y-4">
+    <div className="flex flex-col gap-y-4 items-start">
       <FactDisplay fact={fact} error={displayError} />
 
-      <div className="flex gap-x-4 my-4">
+      <div className="flex flex-col md:flex-row gap-6 my-4">
         <FactButton onClick={fetchFact} loading={loading} />
         <ShareButtons fact={fact} />
       </div>

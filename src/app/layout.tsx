@@ -15,8 +15,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PaRappaDaWrapper>
           <AnalyticsRoot />
           <NavBar />
-          <main className="flex flex-col items-center md:items-start justify-between text-text w-3/4 m-4">
-            <div className="flex flex-col text-center md:text-left items-start justify-between gap-y-4">
+          <main className="flex flex-col items-start justify-between w-full px-4 md:w-3/4 md:m-4">
+            <div className="flex flex-col text-center md:text-left items-start justify-between gap-y-4 w-full md:w-full">
               {children}
             </div>
           </main>

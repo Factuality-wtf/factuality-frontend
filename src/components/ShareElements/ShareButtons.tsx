@@ -5,7 +5,7 @@ import { RiTwitterXFill, RiBlueskyLine } from 'react-icons/ri';
 import { PiCopyLight, PiFacebookLogoBold } from 'react-icons/pi';
 import { XShareButton, FacebookShareButton, BlueskyShareButton } from 'react-share';
 
-import { Fact } from '@/lib/api/facts/factClient';
+import { Fact } from '@/lib/facts/factsTypes';
 import { trackCopy, trackShare } from '@/lib/analytics/events';
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 };
 
 function shareUrl(base: string, source: string) {
-  return `${base}?utm_source=${source}&utm_medium=social&utm_campaign=fact_share`;
+  return `${base}?utm_source=${source}&utm_medium=social&utm_campaign=fwtf_share`;
 }
 
 export default function ShareButtons({ fact }: Props) {
@@ -23,12 +23,11 @@ export default function ShareButtons({ fact }: Props) {
   const twitterUrl = shareUrl(baseUrl, 'twitter');
   const blueskyUrl = shareUrl(baseUrl, 'bluesky');
   const facebookUrl = shareUrl(baseUrl, 'facebook');
-  const copyUrl = `${baseUrl}?utm_source=copy&utm_medium=share&utm_campaign=fact_share`;
+  const copyUrl = `${baseUrl}?utm_source=copy&utm_medium=share&utm_campaign=fwtf_share`;
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(copyUrl);
     trackCopy(fact.id);
-    alert('Link copied!');
   };
 
   return (
@@ -66,7 +65,7 @@ export default function ShareButtons({ fact }: Props) {
         </FacebookShareButton>
 
         <button onClick={copyLink} aria-label="Copy link">
-          <PiCopyLight />
+          <PiCopyLight className="" />
         </button>
       </IconContext.Provider>
     </div>
