@@ -25,33 +25,24 @@
   }
 }
 
-body {
-  box-sizing: border-box;
-  background-color: var(--color-background);
-  font-family: var(--font-sans);
-  scroll-padding-top: 8rem;
-  scroll-behavior: smooth;
-  min-height: 100dvh;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  position: relative;
-}
+@layer base {
+  body {
+    @apply box-border font-sans scroll-smooth min-h-dvh overflow-x-hidden relative m-0 p-0;
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
+    background-color: var(--color-background);
+    scroll-padding-top: 8rem;
+  }
 
-  background-image: url("/_bg.webp");
-  background-repeat: no-repeat;
-  background-position: right center;
-  background-size: auto 100%;
+  body::before {
+    content: "";
+    @apply fixed inset-0 -z-10 pointer-events-none bg-no-repeat;
 
-  opacity: 0.45; /* mobile opacity */
+    background-image: url("/_bg.webp");
+    background-position: right center;
+    background-size: auto 100%;
 
-  pointer-events: none;
-  z-index: -1;
+    opacity: 0.45;
+  }
 }
 
 @media (min-width: 768px) {
