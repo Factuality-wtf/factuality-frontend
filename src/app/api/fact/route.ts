@@ -1,29 +1,18 @@
-// src/app/api/fact/route.ts
 import { NextResponse } from 'next/server';
+import { FactClient, UpstreamError } from '@/lib/api/facts/factClient';
+
+const client = new FactClient();
 
 export async function GET() {
   try {
-    const res = await fetch('https://api.factually.wtf/api/fact', {
-      signal: AbortSignal.timeout(1000), // 1 second timeout
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    });
-
-
-    if (!res.ok) {
-      throw new Error('Network response was not ok');
+    console.log('GET FACT ');
+    const fact = await client.getFact();
+    return NextResponse.json({ data: fact });
+  } catch (error) {
+    if (error instanceof UpstreamError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
-    const data = await res.json();
-    if (!data?.fact) {
-      throw new Error('Invalid data format');
-    }
-
-    return NextResponse.json({ fact: data.fact });
-  } catch (err) {
-    console.error('Fetch failed:', err);
-    return NextResponse.json({ error: 'Error fetching fact.' }, { status: 500 });
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
   }
 }

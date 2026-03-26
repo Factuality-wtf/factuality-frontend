@@ -6,7 +6,7 @@
   --color-primary: #eb6f92;
   --color-secondary: #9ccfd8;
   --color-text: #e0def4;
-  --font-mona-sans: "Mona Sans", sans-serif;
+  --font-mona-sans: "Mona Sans", sans-serif;;
 }
 
 @theme inline {
@@ -25,15 +25,28 @@
   }
 }
 
-body {
-  background-color: var(--color-background);
-  font-family: var(--font-sans);
-  scroll-padding-top: 8rem;
-  scroll-behavior: smooth;
-  min-height: 100dvh;
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+@layer base {
+  body {
+    @apply box-border font-sans scroll-smooth min-h-dvh overflow-x-hidden relative m-0 p-0;
+
+    background-color: var(--color-background);
+    scroll-padding-top: 8rem;
+  }
+
+  body::before {
+    content: "";
+    @apply fixed inset-0 -z-10 pointer-events-none bg-no-repeat;
+
+    background-image: url("/_bg.webp");
+    background-position: right center;
+    background-size: auto 100%;
+
+    opacity: 0.45;
+  }
+}
+
+@media (min-width: 768px) {
+  body::before {
+    opacity: 0.60;
+  }
 }

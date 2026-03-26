@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "factually.wtf — The Facts No One Asked For",
+  title: {
+    default: "factually.wtf — The Facts No One Asked For",
+    template: "%s | factually.wtf",
+  },
   description:
-    "Get smacked in the brain with random facts you didn't ask for but can't unlearn. factually.wtf — where the weird is real.",
+    "Get smacked in the brain with random facts you didn't ask for but can't unlearn.",
   keywords: [
     "random facts",
     "useless knowledge",
