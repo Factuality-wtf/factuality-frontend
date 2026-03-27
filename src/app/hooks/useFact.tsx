@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { FactClient } from '@/lib/facts/factClient';
-import { Fact } from '@/lib/facts/factsTypes';
+import type { Fact } from '@/lib/facts/factsTypes';
 import { DEFAULT_FACT } from '@/lib/facts/factDefaults';
 import { buildFactUrl } from '@/lib/facts/factUtils';
 
@@ -22,8 +21,19 @@ export const useFact = (initialFact: Fact = DEFAULT_FACT) => {
     const initialError = "500 Brain not here. Coul'nt fetch fact";
 
     try {
-      const client = new FactClient();
-      const nextFact = await client.getFact();
+      const res = await fetch('/api/fact', {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const { data: nextFact } = (await res.json()) as { data?: Fact };
+      if (!nextFact) {
+        throw new Error('Invalid data format');
+      }
 
       setFact(nextFact);
 
