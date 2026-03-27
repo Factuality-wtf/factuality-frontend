@@ -1,4 +1,4 @@
-import { Fact } from './factClient';
+import type { Fact } from './factsTypes';
 
 export const DEFAULT_FACT: Fact = {
   id: 'default',

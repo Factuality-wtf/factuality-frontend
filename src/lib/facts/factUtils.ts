@@ -1,4 +1,4 @@
-import { Fact } from './factClient';
+import type { Fact } from './factsTypes';
 
 export function createFactSlug(text: string): string {
   return text
